@@ -1,15 +1,9 @@
-try:
-  from ez_setup import use_setuptools
-  use_setuptools()
-
-  from setuptools import setup
-except ImportError:
-  from distutils.core import setup
+from setuptools import setup
 
 from textwrap import dedent
 
 setup(name='fogbugz',
-      version='0.9.6',
+      version='0.9.7',
       py_modules=['fogbugz'],
       license=dedent("""\
         Copyright (c) 2011, Fog Creek Software, Inc.
@@ -99,8 +93,7 @@ setup(name='fogbugz',
       maintainer_email='customer-service@fogcreek.com',
       url='https://developers.kilnhg.com/Repo/FogBugz/Group/FogBugzPy',
       download_url='https://developers.kilnhg.com/Repo/FogBugz/Group/FogBugzPy',
-      install_requires=['BeautifulSoup>=3.2,<3.3.0'],
-      requires='BeautifulSoup',
+      install_requires=['BeautifulSoup4'],
       classifiers=[
           'Development Status :: 5 - Production/Stable',
           'Intended Audience :: Developers',

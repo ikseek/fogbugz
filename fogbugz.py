@@ -1,8 +1,17 @@
-import urllib2
-import mimetools
-from StringIO import StringIO
+try:
+    # For Python 3.0 and later
+    from urllib.request import Request, build_opener
+    from urllib.error import HTTPError, URLError
+except ImportError:
+    # Fall back to Python 2's urllib2
+    from urllib2 import HTTPError, URLError, Request
+try:
+    from io import StringIO
+except ImportError:
+    from StringIO import StringIO
+from email.generator import _make_boundary
 
-from BeautifulSoup import BeautifulSoup, CData
+from bs4 import BeautifulSoup, CData
 
 DEBUG = False # Set to True for debugging output.
 
@@ -26,10 +35,10 @@ class FogBugz:
         else:
             self._token = None
 
-        self._opener = urllib2.build_opener()
+        self._opener = build_opener()
         try:
             soup = BeautifulSoup(self._opener.open(url + 'api.xml'))
-        except (urllib2.URLError, urllib2.HTTPError), e:
+        except (URLError, HTTPError) as e:
             raise FogBugzConnectionError("Library could not connect to the FogBugz API.  Either this installation of FogBugz does not support the API, or the url, %s, is incorrect.\n\nError: %s" % (self._url, e))
         self._url = url + soup.response.url.string
         self.currentFilter = None
@@ -44,13 +53,13 @@ class FogBugz:
             self.logoff()
         try:
             response = self.__makerequest('logon', email=username, password=password)
-        except FogBugzAPIError, e:
+        except FogBugzAPIError as e:
             raise FogBugzLogonError(e)
-        
+
         self._token = response.token.string
         if type(self._token) == CData:
                 self._token = self._token.encode('utf-8')
-        
+
     def logoff(self):
         """
         Logs off the current user.
@@ -70,7 +79,7 @@ class FogBugz:
         files is a sequence of (filename, filehandle) files to be uploaded
         returns (content_type, body)
         """
-        BOUNDARY = mimetools.choose_boundary()
+        BOUNDARY = _make_boundary()
 
         if len(files) > 0:
             fields['nFileCount'] = str(len(files))
@@ -82,7 +91,7 @@ class FogBugz:
             if DEBUG:
                 print("field: %s: %s"% (repr(k), repr(v)))
             buf.write(crlf.join([ '--' + BOUNDARY, 'Content-disposition: form-data; name="%s"' % k, '', str(v), '' ]))
-        
+
         n = 0
         for f, h in files.items():
             n += 1
@@ -90,8 +99,8 @@ class FogBugz:
             buf.write(crlf.join([ 'Content-type: application/octet-stream', '', '' ]))
             buf.write(h.read())
             buf.write(crlf)
-        
-        buf.write('--' + BOUNDARY + '--' + crlf) 
+
+        buf.write('--' + BOUNDARY + '--' + crlf)
         content_type = "multipart/form-data; boundary=%s" % BOUNDARY
         return content_type, buf.getvalue()
 
@@ -99,23 +108,23 @@ class FogBugz:
         kwargs["cmd"] = cmd
         if self._token:
             kwargs["token"] = self._token
-        
+
         fields = dict([k, v.encode('utf-8') if isinstance(v,basestring) else v] for k, v in kwargs.items())
         files = fields.get('Files', {})
         if 'Files' in fields:
             del fields['Files']
-       
+
         content_type, body = self.__encode_multipart_formdata(fields, files)
         headers = { 'Content-Type': content_type,
                     'Content-Length': str(len(body))}
- 
+
         try:
-            request = urllib2.Request(self._url.encode('utf-8'), body, headers)
+            request = Request(self._url.encode('utf-8'), body, headers)
             response = BeautifulSoup(self._opener.open(request)).response
-        except urllib2.URLError, e:
+        except URLError as e:
             raise FogBugzConnectionError(e)
-        except UnicodeDecodeError, e:
-            print kwargs
+        except UnicodeDecodeError as e:
+            print(kwargs)
             raise
 
         if response.error:
@@ -139,5 +148,3 @@ class FogBugz:
                 return self.__makerequest(name, **kwargs)
             self.__handlerCache[name] = handler
         return self.__handlerCache[name]
-
-

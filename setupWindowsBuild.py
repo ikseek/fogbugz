@@ -1,15 +1,9 @@
-try:
-  from ez_setup import use_setuptools
-  use_setuptools()
-
-  from setuptools import setup
-except ImportError:
-  from distutils.core import setup
+from setuptools import setup
 
 from textwrap import dedent
 
 setup(name='fogbugz',
-      version='0.9.5',
+      version='0.9.7',
       py_modules=['fogbugz'],
       packages=['BeautifulSoup'],
       license=dedent("""\
