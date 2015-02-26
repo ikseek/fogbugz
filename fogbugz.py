@@ -1,10 +1,14 @@
+from __future__ import absolute_import
+from __future__ import print_function
+from __future__ import unicode_literals
+import six
 try:
     # For Python 3.0 and later
     from urllib.request import Request, build_opener
     from urllib.error import HTTPError, URLError
 except ImportError:
     # Fall back to Python 2's urllib2
-    from urllib2 import HTTPError, URLError, Request
+    from urllib2 import HTTPError, URLError, Request, build_opener
 try:
     from io import StringIO
 except ImportError:
@@ -31,7 +35,7 @@ class FogBugz:
             url += '/'
 
         if token:
-            self._token = token.encode('utf-8')
+            self._token = token
         else:
             self._token = None
 
@@ -55,10 +59,9 @@ class FogBugz:
             response = self.__makerequest('logon', email=username, password=password)
         except FogBugzAPIError as e:
             raise FogBugzLogonError(e)
-
         self._token = response.token.string
         if type(self._token) == CData:
-                self._token = self._token.encode('utf-8')
+                self._token = self._token
 
     def logoff(self):
         """
@@ -71,7 +74,7 @@ class FogBugz:
         """
         Set the token without actually logging on.  More secure.
         """
-        self._token = token.encode('utf-8')
+        self._token = token
 
     def __encode_multipart_formdata(self, fields, files):
         """
@@ -87,13 +90,13 @@ class FogBugz:
         crlf = '\r\n'
         buf = StringIO()
 
-        for k, v in fields.items():
+        for k, v in list(fields.items()):
             if DEBUG:
-                print("field: %s: %s"% (repr(k), repr(v)))
+                print(("field: %s: %s"% (repr(k), repr(v))))
             buf.write(crlf.join([ '--' + BOUNDARY, 'Content-disposition: form-data; name="%s"' % k, '', str(v), '' ]))
 
         n = 0
-        for f, h in files.items():
+        for f, h in list(files.items()):
             n += 1
             buf.write(crlf.join([ '--' + BOUNDARY, 'Content-disposition: form-data; name="File%d"; filename="%s"' % ( n, f), '' ]))
             buf.write(crlf.join([ 'Content-type: application/octet-stream', '', '' ]))
@@ -102,14 +105,14 @@ class FogBugz:
 
         buf.write('--' + BOUNDARY + '--' + crlf)
         content_type = "multipart/form-data; boundary=%s" % BOUNDARY
-        return content_type, buf.getvalue()
+        return content_type, buf.getvalue().encode('utf-8')
 
     def __makerequest(self, cmd, **kwargs):
         kwargs["cmd"] = cmd
         if self._token:
             kwargs["token"] = self._token
 
-        fields = dict([k, v.encode('utf-8') if isinstance(v,basestring) else v] for k, v in kwargs.items())
+        fields = dict([k, v] for k, v in list(kwargs.items()))
         files = fields.get('Files', {})
         if 'Files' in fields:
             del fields['Files']
@@ -119,7 +122,7 @@ class FogBugz:
                     'Content-Length': str(len(body))}
 
         try:
-            request = Request(self._url.encode('utf-8'), body, headers)
+            request = Request(self._url, body, headers)
             response = BeautifulSoup(self._opener.open(request)).response
         except URLError as e:
             raise FogBugzConnectionError(e)
@@ -143,7 +146,7 @@ class FogBugz:
         if name.startswith("__"):
             raise AttributeError("No such attribute '%s'" % name)
 
-        if not self.__handlerCache.has_key(name):
+        if name not in self.__handlerCache:
             def handler(**kwargs):
                 return self.__makerequest(name, **kwargs)
             self.__handlerCache[name] = handler

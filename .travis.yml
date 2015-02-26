@@ -1,0 +1,13 @@
+language: python
+# command to install dependencies
+install:
+  - pip install python-coveralls virtualenv tox
+# # command to run tests
+script: tox
+after_success:
+  - pip install -r requirements-testing.txt -e .
+  - py.test --cov=fogbugz --cov-report=term-missing tests
+  - coveralls
+branches:
+  except:
+    - /^\d/

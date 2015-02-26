@@ -1,0 +1,3 @@
+git+https://github.com/paylogic/HTTPretty@enconding-fix#egg=httpretty
+pytest
+pytest-cov
