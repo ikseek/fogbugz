@@ -29,7 +29,7 @@ class FogBugzConnectionError(FogBugzAPIError):
     pass
 
 class FogBugz:
-    def __init__(self, url, token=None):
+    def __init__(self, url, token=None, soup_features="html.parser"):
         self.__handlerCache = {}
         if not url.endswith('/'):
             url += '/'
@@ -38,10 +38,12 @@ class FogBugz:
             self._token = token
         else:
             self._token = None
+        self._soup_features = soup_features
 
         self._opener = build_opener()
         try:
-            soup = BeautifulSoup(self._opener.open(url + 'api.xml'))
+            soup = BeautifulSoup(self._opener.open(url + 'api.xml'),
+                                 features=self._soup_features)
         except (URLError, HTTPError) as e:
             raise FogBugzConnectionError("Library could not connect to the FogBugz API.  Either this installation of FogBugz does not support the API, or the url, %s, is incorrect.\n\nError: %s" % (self._url, e))
         self._url = url + soup.response.url.string
@@ -123,7 +125,8 @@ class FogBugz:
 
         try:
             request = Request(self._url, body, headers)
-            response = BeautifulSoup(self._opener.open(request)).response
+            response = BeautifulSoup(self._opener.open(request),
+                                     features=self._soup_features).response
         except URLError as e:
             raise FogBugzConnectionError(e)
         except UnicodeDecodeError as e:
