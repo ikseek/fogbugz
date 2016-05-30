@@ -1,3 +1,3 @@
-git+https://github.com/paylogic/HTTPretty@enconding-fix#egg=httpretty
+git+https://github.com/paylogic/HTTPretty@0.8.3#egg=httpretty
 pytest
 pytest-cov
