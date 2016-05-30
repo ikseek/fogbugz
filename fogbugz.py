@@ -16,18 +16,23 @@ from email.generator import _make_boundary
 
 from bs4 import BeautifulSoup, CData
 
-DEBUG = False # Set to True for debugging output.
+DEBUG = False  # Set to True for debugging output.
+
 
 class FogBugzAPIError(Exception):
     pass
 
+
 class FogBugzLogonError(FogBugzAPIError):
     pass
+
 
 class FogBugzConnectionError(FogBugzAPIError):
     pass
 
+
 class FogBugz:
+
     def __init__(self, url, token=None, soup_features="html.parser"):
         self.__handlerCache = {}
         if not url.endswith('/'):
@@ -44,7 +49,11 @@ class FogBugz:
             soup = BeautifulSoup(self._opener.open(url + 'api.xml'),
                                  features=self._soup_features)
         except (URLError, HTTPError) as e:
-            raise FogBugzConnectionError("Library could not connect to the FogBugz API.  Either this installation of FogBugz does not support the API, or the url, %s, is incorrect.\n\nError: %s" % (url, e))
+            raise FogBugzConnectionError(
+                "Library could not connect to the FogBugz API.  "
+                "Either this installation of FogBugz does not "
+                "support the API, or the url, %s, is incorrect.\n\n"
+                "Error: %s" % (url, e))
         self._url = url + soup.response.url.string
         self.currentFilter = None
 
@@ -57,12 +66,13 @@ class FogBugz:
         if self._token:
             self.logoff()
         try:
-            response = self.__makerequest('logon', email=username, password=password)
+            response = self.__makerequest(
+                'logon', email=username, password=password)
         except FogBugzAPIError as e:
             raise FogBugzLogonError(e)
         self._token = response.token.string
         if type(self._token) == CData:
-                self._token = self._token
+            self._token = self._token
 
     def logoff(self):
         """
@@ -71,7 +81,7 @@ class FogBugz:
         self.__makerequest('logoff')
         self._token = None
 
-    def token(self,token):
+    def token(self, token):
         """
         Set the token without actually logging on.  More secure.
         """
@@ -93,14 +103,21 @@ class FogBugz:
 
         for k, v in list(fields.items()):
             if DEBUG:
-                print(("field: %s: %s"% (repr(k), repr(v))))
-            buf.write(crlf.join([ '--' + BOUNDARY, 'Content-disposition: form-data; name="%s"' % k, '', str(v), '' ]))
+                print(("field: %s: %s" % (repr(k), repr(v))))
+            buf.write(crlf.join(
+                ['--' + BOUNDARY,
+                 'Content-disposition: form-data; name="%s"' % k,
+                 '', str(v), '']))
 
         n = 0
         for f, h in list(files.items()):
             n += 1
-            buf.write(crlf.join([ '--' + BOUNDARY, 'Content-disposition: form-data; name="File%d"; filename="%s"' % ( n, f), '' ]))
-            buf.write(crlf.join([ 'Content-type: application/octet-stream', '', '' ]))
+            buf.write(crlf.join(
+                ['--' + BOUNDARY,
+                 'Content-disposition: form-data;'
+                 ' name="File%d"; filename="%s"' % (n, f), '']))
+            buf.write(
+                crlf.join(['Content-type: application/octet-stream', '', '']))
             buf.write(h.read())
             buf.write(crlf)
 
@@ -119,8 +136,8 @@ class FogBugz:
             del fields['Files']
 
         content_type, body = self.__encode_multipart_formdata(fields, files)
-        headers = { 'Content-Type': content_type,
-                    'Content-Length': str(len(body))}
+        headers = {'Content-Type': content_type,
+                   'Content-Length': str(len(body))}
 
         try:
             request = Request(self._url, body, headers)
@@ -133,7 +150,8 @@ class FogBugz:
             raise
 
         if response.error:
-            raise FogBugzAPIError('Error Code %s: %s' % (response.error['code'], response.error.string,))
+            raise FogBugzAPIError('Error Code %s: %s' % (
+                response.error['code'], response.error.string,))
         return response
 
     def __getattr__(self, name):
