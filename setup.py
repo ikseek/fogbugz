@@ -95,7 +95,6 @@ setup(name='fogbugz',
       url='https://developers.kilnhg.com/Repo/FogBugz/Group/FogBugzPy',
       download_url='https://developers.kilnhg.com/Repo/FogBugz/Group/FogBugzPy',
       install_requires=[
-        'six',
         'BeautifulSoup4'
       ],
       classifiers=[

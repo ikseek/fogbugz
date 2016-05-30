@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import unicode_literals
-import six
 try:
     # For Python 3.0 and later
     from urllib.request import Request, build_opener
