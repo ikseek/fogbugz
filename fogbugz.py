@@ -141,13 +141,15 @@ class FogBugz:
 
         try:
             request = Request(self._url, body, headers)
-            response = BeautifulSoup(self._opener.open(request),
-                                     features=self._soup_features).response
+            soup = BeautifulSoup(self._opener.open(request),
+                                 features=self._soup_features)
         except URLError as e:
             raise FogBugzConnectionError(e)
-        except UnicodeDecodeError as e:
-            print(kwargs)
-            raise
+
+        response = soup.response
+        if response is None:
+            raise FogBugzConnectionError("Unexpected FogBugz server response",
+                                         soup)
 
         if response.error:
             raise FogBugzAPIError('Error Code %s: %s' % (
